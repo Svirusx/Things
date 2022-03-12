@@ -30,17 +30,19 @@ then
 printf "${BROWN}Downloading $burpVersion version:${NC}\n"
 wget "https://portswigger.net/burp/releases/download?product=community&version=$burpVersion&type=Jar" -O /tmp/burpsuite
 chmod +x /tmp/burpsuite
-sudo mv /tmp/burpsuite /usr/bin/burpsuite
-echo 'sh -c "java -jar /usr/bin/burpsuite&"' > /tmp/runburpsuite
-chmod +x /tmp/runburpsuite 
-sudo mv /tmp/runburpsuite /usr/bin/runburpsuite
+sudo mv /tmp/burpsuite /usr/share/burpsuite/burpsuite.jar
+echo '#!/usr/bin/env sh' > /bin/burpsuite
+echo 'set -e' >> /bin/burpsuite
+echo 'export JAVA_CMD=java' >> /bin/burpsuite
+echo '# Include the wrappers utility script' >> /bin/burpsuite
+echo '. /usr/lib/java-wrappers/java-wrappers.sh' >> /bin/burpsuite
+echo 'run_java -jar /usr/share/burpsuite/burpsuite.jar "$@"' >> /bin/burpsuite
+chmod +x /bin/burpsuite
 
 echo $burpVersion > ~/.BurpSuite/CurrentVersion.txt
 printf "${GREEN}Burp Suite updated to $burpVersion version${NC}\n"
-echo "Run burp suite by typing runburpsuite in terminal, if you are on kali linux then typing burpsuite works too."
+echo "Run burp suite by typing burpsuite in terminal, if you are on kali linux then typing burpsuite works too."
 echo "You need to have java installed to use BurpSuite."
 else
 printf "${GREEN}You have latest BurpSuite Community Edition Installed.${NC}\n"
 fi
-
-
