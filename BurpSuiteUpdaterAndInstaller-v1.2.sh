@@ -12,6 +12,9 @@ NC='\033[0m'
 
 printf "${GREEN}Burp Suite installer & updater v1.0 \n${BROWN}Checking latest version${NC} \n"
 
+# Prompt the user for their password
+sudo -v
+
 burpVersion=$(curl -i -s -k -X $'GET' -H $'Host: portswigger.net' $'https://portswigger.net/burp/releases/community/latest' | grep 'location:' | cut -f1 -d "?" | cut -f3,4,5 -d'-' | sed 's/-/./g')
 
 if [ ! -f ~/.BurpSuite/CurrentVersion.txt ]
@@ -24,20 +27,22 @@ currentVersion=$(cat ~/.BurpSuite/CurrentVersion.txt)
 
 printf "Current version: ${RED}$currentVersion${NC}\n"
 printf "Latest version: ${RED}$burpVersion${NC}\n"
-if [ "$currentVersion" != "$burpVersion" ]
+if [ "$currentVersion" != "$burpVersion" ] || [ ! -f "/usr/share/burpsuite/burpsuite.jar" ]
 then
 
 printf "${BROWN}Downloading $burpVersion version:${NC}\n"
+[ -d /usr/share/burpsuite ] || sudo mkdir -p /usr/share/burpsuite
+
 wget "https://portswigger.net/burp/releases/download?product=community&version=$burpVersion&type=Jar" -O /tmp/burpsuite
 chmod +x /tmp/burpsuite
 sudo mv /tmp/burpsuite /usr/share/burpsuite/burpsuite.jar
-echo '#!/usr/bin/env sh' > /bin/burpsuite
-echo 'set -e' >> /bin/burpsuite
-echo 'export JAVA_CMD=java' >> /bin/burpsuite
-echo '# Include the wrappers utility script' >> /bin/burpsuite
-echo '. /usr/lib/java-wrappers/java-wrappers.sh' >> /bin/burpsuite
-echo 'run_java -jar /usr/share/burpsuite/burpsuite.jar "$@"' >> /bin/burpsuite
-chmod +x /bin/burpsuite
+cat <<EOL | sudo tee /bin/burpsuite > /dev/null
+#!/usr/bin/env sh
+set -e
+export JAVA_CMD=java
+java -jar /usr/share/burpsuite/burpsuite.jar "\$@"
+EOL
+sudo chmod +x /bin/burpsuite
 
 echo $burpVersion > ~/.BurpSuite/CurrentVersion.txt
 printf "${GREEN}Burp Suite updated to $burpVersion version${NC}\n"
